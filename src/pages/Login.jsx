@@ -15,7 +15,7 @@ export default function Login() {
         setError(null)
 
         try {
-            const { data, error } = await signInWithDNI(dni)
+            const { data, error } = await signInWithDNI(dni.trim())
 
             if (error) throw error
 
@@ -24,7 +24,8 @@ export default function Login() {
             }
         } catch (err) {
             console.error(err)
-            setError('No se encontró un usuario activo con este DNI.')
+            // Show detailed error for debugging (demo purposes)
+            setError(err.message || 'Error desconocido al intentar ingresar.')
         } finally {
             setLoading(false)
         }
