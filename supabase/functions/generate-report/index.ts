@@ -113,7 +113,10 @@ Deno.serve(async (req) => {
         reportText += `Fin del Reporte\n`; // - Requires import map configuration)`; // This comment was part of the instruction, but seems like a typo in the instruction itself. Keeping the line as `Fin del Reporte\n`;
 
         return new Response(reportText, {
-            headers: { "Content-Type": "text/plain" },
+            headers: {
+                "Content-Type": "text/plain",
+                "Access-Control-Allow-Origin": "*"
+            },
         })
     } catch (error) {
         return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { 'Content-Type': 'application/json' } })
