@@ -81,7 +81,7 @@ export default function Login() {
                                 <span>Verificando...</span>
                             </>
                         ) : (
-                            <span>Ingresar al Sistema</span>
+                            <span>Ingresar al Sistema (v2)</span>
                         )}
                     </button>
                 </form>
