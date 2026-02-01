@@ -195,7 +195,7 @@ export default function Dashboard() {
                                             <td className="p-4 font-medium text-white flex items-center gap-2 capitalize">
                                                 <Calendar className="w-4 h-4 text-brand-primary" />
                                                 {reading.assignments?.period
-                                                    ? format(new Date(reading.assignments.period), 'MMMM yyyy', { locale: es })
+                                                    ? format(new Date(reading.assignments.period + 'T12:00:00'), 'MMMM yyyy', { locale: es })
                                                     : 'N/A'}
                                             </td>
                                             <td className="p-4 text-slate-300">
