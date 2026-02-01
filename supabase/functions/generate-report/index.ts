@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { PDFDocument, StandardFonts, rgb } from 'https://cdn.skypack.dev/pdf-lib'
 
 Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') {
