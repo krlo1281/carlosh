@@ -21,15 +21,10 @@ Deno.serve(async (req) => {
         // 1. Get the date of the very last reading for this user
         const { data: latestReading, error: latestError } = await supabase
             .from('readings')
-            .select('reading_date')
-            .eq('assignments.user_id', user.id) // Query via assignment relation? No, reading->assignment->user
-            // Wait, filtering deeply nested is hard. Let's filter by assignments user_id first?
-            // Easier: Get all assignments for user -> Get readings for those assignments -> Order by reading_date desc limit 1.
-            // Actually, supabase allows mapping: .select('reading_date, assignments!inner(user_id)').eq('assignments.user_id', user.id).order...
             .select(`
-            reading_date,
-            assignments!inner ( user_id )
-        `)
+                reading_date,
+                assignments!inner ( user_id )
+            `)
             .eq('assignments.user_id', user.id)
             .order('reading_date', { ascending: false })
             .limit(1)
