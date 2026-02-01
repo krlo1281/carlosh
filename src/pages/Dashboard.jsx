@@ -54,24 +54,8 @@ export default function Dashboard() {
 
             if (error) throw error
 
-            let filteredReadings = readingsData || []
-
-            // Filter by Latest Year logic
-            if (filteredReadings.length > 0) {
-                // Find latest reading date
-                // Since it's ordered desc, the first one is the latest
-                const latestDateStr = filteredReadings[0].reading_date
-                if (latestDateStr) {
-                    const latestYear = new Date(latestDateStr).getFullYear()
-
-                    filteredReadings = filteredReadings.filter(r => {
-                        if (!r.reading_date) return false
-                        return new Date(r.reading_date).getFullYear() === latestYear
-                    })
-                }
-            }
-
-            setReadings(filteredReadings)
+            // Show ALL readings for the user (no year filter)
+            setReadings(readingsData || [])
 
         } catch (error) {
             console.error('Error fetching data:', error)
