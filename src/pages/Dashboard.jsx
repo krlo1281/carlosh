@@ -88,9 +88,10 @@ export default function Dashboard() {
     const handleDownloadReport = async (period) => {
         setDownloading(period)
         try {
-            // Invoke Edge Function for Annual Report
+            // Invoke Edge Function for Annual Report (PDF Format)
             const { data, error } = await supabase.functions.invoke('generate-report', {
-                body: {}, // No specific period needed, it defaults to annual logic
+                body: {},
+                responseType: 'blob' // Critical: Tell supabase to treat response as binary
             })
 
             if (error) {
@@ -101,14 +102,12 @@ export default function Dashboard() {
                 return
             }
 
-            // Create a Blob from the data
-            // Note: Since data is string (text/plain) from our simplified function, we treat it as text.
-            // If it were a real PDF, we would need responseType: 'blob' in invoke options.
-            const blob = new Blob([data], { type: 'text/plain' })
+            // Data is already a Blob when using responseType: 'blob'
+            const blob = data;
             const url = window.URL.createObjectURL(blob)
             const a = document.createElement('a')
             a.href = url
-            a.download = `reporte-anual-${format(new Date(), 'yyyy')}.txt`
+            a.download = `reporte-dosimetrico-${format(new Date(), 'yyyy')}.pdf`
             document.body.appendChild(a)
             a.click()
             window.URL.revokeObjectURL(url)
