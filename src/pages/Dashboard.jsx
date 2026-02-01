@@ -53,7 +53,25 @@ export default function Dashboard() {
                 .order('reading_date', { ascending: false })
 
             if (error) throw error
-            setReadings(readingsData || [])
+
+            let filteredReadings = readingsData || []
+
+            // Filter by Latest Year logic
+            if (filteredReadings.length > 0) {
+                // Find latest reading date
+                // Since it's ordered desc, the first one is the latest
+                const latestDateStr = filteredReadings[0].reading_date
+                if (latestDateStr) {
+                    const latestYear = new Date(latestDateStr).getFullYear()
+
+                    filteredReadings = filteredReadings.filter(r => {
+                        if (!r.reading_date) return false
+                        return new Date(r.reading_date).getFullYear() === latestYear
+                    })
+                }
+            }
+
+            setReadings(filteredReadings)
 
         } catch (error) {
             console.error('Error fetching data:', error)
@@ -174,9 +192,11 @@ export default function Dashboard() {
                                 ) : (
                                     readings.map((reading) => (
                                         <tr key={reading.id} className="hover:bg-white/5 transition-colors">
-                                            <td className="p-4 font-medium text-white flex items-center gap-2">
+                                            <td className="p-4 font-medium text-white flex items-center gap-2 capitalize">
                                                 <Calendar className="w-4 h-4 text-brand-primary" />
-                                                {reading.assignments?.period}
+                                                {reading.assignments?.period
+                                                    ? format(new Date(reading.assignments.period), 'MMMM yyyy', { locale: es })
+                                                    : 'N/A'}
                                             </td>
                                             <td className="p-4 text-slate-300">
                                                 <span className="bg-slate-800 px-2 py-1 rounded text-xs font-mono">

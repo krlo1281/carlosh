@@ -18,8 +18,43 @@ Deno.serve(async (req) => {
         const { data: { user }, error: authError } = await supabase.auth.getUser()
         if (authError || !user) throw new Error('Unauthorized')
 
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        // 1. Get the date of the very last reading for this user
+        const { data: latestReading, error: latestError } = await supabase
+            .from('readings')
+            .select('reading_date')
+            .eq('assignments.user_id', user.id) // Query via assignment relation? No, reading->assignment->user
+            // Wait, filtering deeply nested is hard. Let's filter by assignments user_id first?
+            // Easier: Get all assignments for user -> Get readings for those assignments -> Order by reading_date desc limit 1.
+            // Actually, supabase allows mapping: .select('reading_date, assignments!inner(user_id)').eq('assignments.user_id', user.id).order...
+            .select(`
+            reading_date,
+            assignments!inner ( user_id )
+        `)
+            .eq('assignments.user_id', user.id)
+            .order('reading_date', { ascending: false })
+            .limit(1)
+            .single();
+
+        // If no readings, return empty report.
+        // If error (e.g. no rows), handle gracefully.
+
+        let targetYear = new Date().getFullYear();
+        if (latestReading?.reading_date) {
+            targetYear = new Date(latestReading.reading_date).getFullYear();
+        }
+
+        // 2. Fetch all readings for that Year
+        const startOfYear = new Date(`${targetYear}-01-01T00:00:00.000Z`);
+        const endOfYear = new Date(`${targetYear}-12-31T23:59:59.999Z`);
+
+        // Fetch Profile for Name
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', user.id)
+            .single();
+
+        const userName = profile?.full_name || user.email;
 
         const { data: readings, error: dbError } = await supabase
             .from('readings')
@@ -32,39 +67,21 @@ Deno.serve(async (req) => {
                 dosimeters (code)
             )
         `)
-            .gte('reading_date', oneYearAgo.toISOString())
-            .order('reading_date', { ascending: false });
-
-        if (dbError) throw new Error("Database Error: " + dbError.message);
-
-        let reportText = `REPORTE ANUAL DE DOSIMETRIA\n`;
-        reportText += `Usuario: ${user.email}\n`;
-        reportText += `Fecha de Emisión: ${new Date().toLocaleDateString()}\n`;
-        reportText += `Periodo: Últimos 12 meses\n`;
-        reportText += `------------------------------------------------------------\n`;
-        reportText += `PERIODO       DOSIMETRO   Hp(10)  Hp(0.07)  FECHA\n`;
-        reportText += `------------------------------------------------------------\n`;
-
-        if (!readings || readings.length === 0) {
-            reportText += "No se encontraron lecturas en este periodo.\n";
-        } else {
-            readings.forEach((r: any) => {
-                const period = (r.assignments?.period || "N/A").padEnd(12, ' ');
-                const code = (r.assignments?.dosimeters?.code || "N/A").padEnd(10, ' ');
-                const hp10 = (r.hp10_msv?.toFixed(2) || "0.00").padStart(6, ' ');
-                const hp007 = (r.hp007_msv?.toFixed(2) || "0.00").padStart(8, ' ');
-                const date = r.reading_date ? new Date(r.reading_date).toLocaleDateString() : "-";
-                reportText += `${period}  ${code}  ${hp10}  ${hp007}  ${date}\n`;
-            });
+        const code = (r.assignments?.dosimeters?.code || "N/A").padEnd(10, ' ');
+        const hp10 = (r.hp10_msv?.toFixed(2) || "0.00").padStart(6, ' ');
+        const hp007 = (r.hp007_msv?.toFixed(2) || "0.00").padStart(8, ' ');
+        const date = r.reading_date ? new Date(r.reading_date).toLocaleDateString() : "-";
+        reportText += `${period}  ${code}  ${hp10}  ${hp007}  ${date}\n`;
+    });
         }
 
-        reportText += `\n------------------------------------------------------------\n`;
-        reportText += `Fin del Reporte\n`; // - Requires import map configuration)`; // This comment was part of the instruction, but seems like a typo in the instruction itself. Keeping the line as `Fin del Reporte\n`;
+reportText += `\n------------------------------------------------------------\n`;
+reportText += `Fin del Reporte\n`; // - Requires import map configuration)`; // This comment was part of the instruction, but seems like a typo in the instruction itself. Keeping the line as `Fin del Reporte\n`;
 
-        return new Response(reportText, {
-            headers: { "Content-Type": "text/plain" },
-        })
+return new Response(reportText, {
+    headers: { "Content-Type": "text/plain" },
+})
     } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { 'Content-Type': 'application/json' } })
-    }
+    return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { 'Content-Type': 'application/json' } })
+}
 })
