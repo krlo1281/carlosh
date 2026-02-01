@@ -67,21 +67,55 @@ Deno.serve(async (req) => {
                 dosimeters (code)
             )
         `)
-        const code = (r.assignments?.dosimeters?.code || "N/A").padEnd(10, ' ');
-        const hp10 = (r.hp10_msv?.toFixed(2) || "0.00").padStart(6, ' ');
-        const hp007 = (r.hp007_msv?.toFixed(2) || "0.00").padStart(8, ' ');
-        const date = r.reading_date ? new Date(r.reading_date).toLocaleDateString() : "-";
-        reportText += `${period}  ${code}  ${hp10}  ${hp007}  ${date}\n`;
-    });
+            .eq('assignments.user_id', user.id)
+            .gte('reading_date', startOfYear.toISOString())
+            .lte('reading_date', endOfYear.toISOString())
+            .order('reading_date', { ascending: false });
+
+        if (dbError) throw new Error("Database Error: " + dbError.message);
+
+        let reportText = `REPORTE DE DOSIMETRIA\n`;
+        reportText += `Usuario: ${userName}\n`;
+        reportText += `Fecha de Emisión: ${new Date().toLocaleDateString()}\n`;
+        reportText += `Periodo Reportado: ${targetYear}\n`;
+        reportText += `------------------------------------------------------------\n`;
+        reportText += `PERIODO            DOSIMETRO   Hp(10)  Hp(0.07)  FECHA\n`;
+        reportText += `------------------------------------------------------------\n`;
+
+        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+        if (!readings || readings.length === 0) {
+            reportText += "No se encontraron lecturas en este periodo.\n";
+        } else {
+            readings.forEach((r: any) => {
+                let periodDisplay = "N/A";
+                if (r.assignments?.period) {
+                    const pDate = new Date(r.assignments.period + 'T12:00:00');
+                    if (!isNaN(pDate.getTime())) {
+                        const monthName = months[pDate.getUTCMonth()];
+                        const year = pDate.getUTCFullYear();
+                        periodDisplay = `${monthName} ${year}`;
+                    } else {
+                        periodDisplay = r.assignments.period;
+                    }
+                }
+
+                const periodCol = periodDisplay.padEnd(18, ' ');
+                const code = (r.assignments?.dosimeters?.code || "N/A").padEnd(10, ' ');
+                const hp10 = (r.hp10_msv?.toFixed(2) || "0.00").padStart(6, ' ');
+                const hp007 = (r.hp007_msv?.toFixed(2) || "0.00").padStart(8, ' ');
+                const date = r.reading_date ? new Date(r.reading_date).toLocaleDateString() : "-";
+                reportText += `${periodCol} ${code}  ${hp10}  ${hp007}  ${date}\n`;
+            });
         }
 
-reportText += `\n------------------------------------------------------------\n`;
-reportText += `Fin del Reporte\n`; // - Requires import map configuration)`; // This comment was part of the instruction, but seems like a typo in the instruction itself. Keeping the line as `Fin del Reporte\n`;
+        reportText += `\n------------------------------------------------------------\n`;
+        reportText += `Fin del Reporte\n`; // - Requires import map configuration)`; // This comment was part of the instruction, but seems like a typo in the instruction itself. Keeping the line as `Fin del Reporte\n`;
 
-return new Response(reportText, {
-    headers: { "Content-Type": "text/plain" },
-})
+        return new Response(reportText, {
+            headers: { "Content-Type": "text/plain" },
+        })
     } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { 'Content-Type': 'application/json' } })
-}
+        return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { 'Content-Type': 'application/json' } })
+    }
 })
