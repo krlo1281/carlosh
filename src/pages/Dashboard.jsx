@@ -83,12 +83,18 @@ export default function Dashboard() {
                 return
             }
 
-            // Assuming function returns base64 or blob. Standard is defined in logic.
-            // If we receive a blob directly:
-            // const blob = data; 
-
-            // Since we haven't implemented the function yet, this is a placeholder behavior.
-            console.log('Report generated', data)
+            // Create a Blob from the data
+            // Note: Since data is string (text/plain) from our simplified function, we treat it as text.
+            // If it were a real PDF, we would need responseType: 'blob' in invoke options.
+            const blob = new Blob([data], { type: 'text/plain' })
+            const url = window.URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `reporte-${period}.txt` // Changing extension to .txt for this demo
+            document.body.appendChild(a)
+            a.click()
+            window.URL.revokeObjectURL(url)
+            document.body.removeChild(a)
 
         } catch (err) {
             console.error('Download error:', err)
