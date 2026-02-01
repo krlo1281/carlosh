@@ -70,9 +70,9 @@ export default function Dashboard() {
     const handleDownloadReport = async (period) => {
         setDownloading(period)
         try {
-            // Invoke Edge Function
+            // Invoke Edge Function for Annual Report
             const { data, error } = await supabase.functions.invoke('generate-report', {
-                body: { period },
+                body: {}, // No specific period needed, it defaults to annual logic
             })
 
             if (error) {
@@ -90,7 +90,7 @@ export default function Dashboard() {
             const url = window.URL.createObjectURL(blob)
             const a = document.createElement('a')
             a.href = url
-            a.download = `reporte-${period}.txt` // Changing extension to .txt for this demo
+            a.download = `reporte-anual-${format(new Date(), 'yyyy')}.txt`
             document.body.appendChild(a)
             a.click()
             window.URL.revokeObjectURL(url)
@@ -162,13 +162,12 @@ export default function Dashboard() {
                                     <th className="p-4 font-semibold text-right">Hp(10) <span className="text-xs normal-case opacity-70">mSv</span></th>
                                     <th className="p-4 font-semibold text-right">Hp(0.07) <span className="text-xs normal-case opacity-70">mSv</span></th>
                                     <th className="p-4 font-semibold">Fecha Lectura</th>
-                                    <th className="p-4 font-semibold text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/10 text-sm">
                                 {readings.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="p-8 text-center text-slate-400">
+                                        <td colSpan={5} className="p-8 text-center text-slate-400">
                                             No hay lecturas registradas en el sistema.
                                         </td>
                                     </tr>
@@ -193,26 +192,28 @@ export default function Dashboard() {
                                             <td className="p-4 text-slate-400">
                                                 {reading.reading_date ? format(new Date(reading.reading_date), 'dd/MM/yyyy') : '-'}
                                             </td>
-                                            <td className="p-4 text-center">
-                                                <button
-                                                    onClick={() => handleDownloadReport(reading.assignments?.period)}
-                                                    disabled={downloading === reading.assignments?.period}
-                                                    className="p-2 hover:bg-brand-primary/20 text-brand-primary rounded-lg transition-colors disabled:opacity-50"
-                                                    title="Descargar Informe PDF"
-                                                >
-                                                    {downloading === reading.assignments?.period ? (
-                                                        <Activity className="w-4 h-4 animate-spin" />
-                                                    ) : (
-                                                        <FileText className="w-4 h-4" />
-                                                    )}
-                                                </button>
-                                            </td>
                                         </tr>
                                     ))
                                 )}
                             </tbody>
                         </table>
                     </div>
+                </div>
+
+                {/* Global Actions */}
+                <div className="flex justify-end animate-slide-up" style={{ animationDelay: '100ms' }}>
+                    <button
+                        onClick={() => handleDownloadReport()}
+                        disabled={downloading}
+                        className="btn-primary flex items-center gap-2 px-6 py-3 shadow-lg shadow-brand-primary/20 hover:shadow-brand-primary/40 transition-all"
+                    >
+                        {downloading ? (
+                            <Activity className="w-5 h-5 animate-spin" />
+                        ) : (
+                            <Download className="w-5 h-5" />
+                        )}
+                        <span>Descargar Reporte Anual</span>
+                    </button>
                 </div>
             </main>
         </div>
