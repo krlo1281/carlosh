@@ -76,8 +76,9 @@ export default function Dashboard() {
             })
 
             if (error) {
-                // Fallback for demo if function is not deployed: Alert user
-                alert('El servicio de reporte PDF no está disponible en esta demostración. (Error: Function not found)')
+                // Show real error
+                const msg = error.message || error.toString() || 'Error desconocido';
+                alert(`Error al generar reporte: ${msg}`);
                 console.error(error)
                 return
             }
